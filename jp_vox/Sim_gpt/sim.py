@@ -8,9 +8,17 @@ import threading
 import time
 
 def text_json(text):
+    """
+    When getting a prompt back from chatgpt will it send the response in a json format, 
+    this function returns the content of the json variable aka what chatgpt said.
+    """
     return text['choices'][0]['message']['content']
 
 def separate(string: str) -> str:
+    """"
+    When you get a response from chatgpt will the text not have any newline/line break,
+    this funtion adds a newline for every 80 characters (when a word is finished).
+    """
     i = 0
     h = 0
     new = []
@@ -29,18 +37,23 @@ def separate(string: str) -> str:
 
     return ''.join(new)
 
-parser = argparse.ArgumentParser()
 
-parser.add_argument('-m', type=str)
+# preperations for extra command-line-arguments.
+parser = argparse.ArgumentParser()
+parser.add_argument('-m', type=str) # m for modify gpt
 args = parser.parse_args()
 
+# opens the env file so that we can get the gpt key
 dotenv.load_dotenv()
 
-
+# api key for chatgpt
 z = os.getenv("API_KEY")
 
+# uses the openai library to set the api key
 openai.api_key = z
-if args.m == "y":
+
+# sets up the gpt modifyers, and the chat history for the ai you're talking to and the ai that generates options
+if args.m == "y": # if you set -m to y you get to modify the options and talking ai
     chat_history = [{"role": "system",
                      "content": f"{input("Talking ai: ")}, answer max in 3 sentances, if you've talked about the same thing three times; change the subject"},
                     {"role": "user", "content": "hi"}]
@@ -50,7 +63,11 @@ else:
                     {"role": "user", "content": "hi"}]
     chat_history_options = [{"role": "system", "content": "answer max in 2 sentances"}]
 
+
 def send(chat_history_=chat_history_options, role="Teenager"):
+    """
+    this function sends a request to chatgpt, and then returns the response
+    """
     chat_history_.append({"role": "system", "content": f"talk/pose questions like {role}"})
 
     thing = openai.ChatCompletion.create(
@@ -63,35 +80,43 @@ def send(chat_history_=chat_history_options, role="Teenager"):
 
 
 while True:
+    # the talking ai says something depending on the chat_history
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=chat_history
     )
 
+    # gets text of the reponse
     response = text_json(response)
 
+    # adds it to chat history
     chat_history_options.append({"role": "user", "content": response})
 
-
+    # shows the response to the user
     print(f"\n{separate(f"{response}")}\n")
 
+    # creates a new thread that excecutes the speak_jp function, the reason for the thread is that the program runs faster if I operate on multible cpu cores
     thread = threading.Thread(target=speak_jp, args=(response,))
-
     thread.start()
 
+
+    # generates options to choose from
     one = send(chat_history_=chat_history_options, role="a Teenager")
     two = send(chat_history_=chat_history_options, role="your trying to change the subject")
     three = send(chat_history_=chat_history_options, role="ben shapiro")
 
+    # makes versions of the options that have newlines in them for better readability
     one_s = separate(f"{one}")
     two_s = separate(f"{two}")
     three_s = separate(f"{three}")
 
+    # waits for the speak_jp to finish
     thread.join()
 
+    # the user chooses one of the options as a response to what the talking ai said or makes an answer of their own
     user = int(input(f"1: {one_s}\n\n2: {two_s}\n\n3: {three_s}\n\n4: Own Answer\n\nYour choice: ").strip())
 
-
+    # checks what they choose for option
     if user == 1:
         chat_history.append({"role": "user", "content": one})
     elif user == 2:
@@ -102,3 +127,5 @@ while True:
         chat_history.append({"role": "user", "content": input("Answer: ").strip()})
     else:
         sys.exit("Invalid int")
+
+    # repeates
