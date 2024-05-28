@@ -10,6 +10,13 @@ import pygame
 import argparse
 
 def speak_jp(sentance, source="EN", target="JA"):
+    """
+    This function gets in a sentance in the language specified by the source variable, 
+    then it translates the sentance from the source to the target language.
+    Then it sends the text of the translation to voicevox, a japanease text to speech software,
+    and gets a soundfile back. Then it plays the soundfile through pygame
+    
+    """
     dotenv.load_dotenv()
 
     voicevox_key = os.getenv('VOICEVOX_KEY')
@@ -58,8 +65,11 @@ def speak_jp(sentance, source="EN", target="JA"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    
+    # command line arguments for target and source language
     parser.add_argument('-target', type=str)
     parser.add_argument('-source', type=str)
+    # -text is if you have a text file you want it to play from.
     parser.add_argument('-text', type=str)
     args = parser.parse_args()
 
